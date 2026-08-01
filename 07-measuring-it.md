@@ -35,6 +35,17 @@ to send, not the experience of the requests it did not.
 End-to-end timing needs stage timestamps: enqueue, admission, database commit, WAL observation,
 publication, socket delivery, client application, final cursor.
 
+## See it yourself
+
+Coordinated omission is easiest to believe after producing it. Run a closed-loop client against
+a service, stall the service for two seconds, and read the reported p99. It will look excellent,
+because the client stopped sending during the stall and never recorded the requests that would
+have waited.
+
+Then record each request against its *intended* start time rather than its actual send time.
+The same stall now shows up as a two-second tail. Nothing about the service changed; the second
+number is the one a user experiences.
+
 ## Workload dimensions
 
 A complete claim names its position on each axis. The current 500-operation profile is one

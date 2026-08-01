@@ -75,6 +75,27 @@ coordination are separate primitives here.
 
 The verification path itself runs in the engine, which is not public.
 
+## See it yourself
+
+Mint a read-only session and try to write with it. The refusal happens on the server against the
+allowlist baked into the key, not in the client:
+
+```ts
+const session = await ablo.sessions.create({
+  user: { id: 'u_1' },
+  can: { orders: ['read'] },
+  ttlSeconds: 900,
+});
+
+const scoped = Ablo({ schema, apiKey: session.token });
+
+await scoped.orders.get({ id });                 // allowed
+await scoped.orders.update({ id, data: { status: 'approved' } });  // refused
+```
+
+Widen `can` to `['read', 'update']`, mint again, and the same call succeeds. Nothing about the
+client changed.
+
 ## Still open
 
 - Revocation latency for an agent that is already mid-operation when its authority is pulled.

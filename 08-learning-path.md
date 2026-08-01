@@ -10,7 +10,7 @@ stages in [05](05-why-it-is-hard.md#an-update-is-not-one-operation).
 
 | | |
 | --- | --- |
-| **Run** | any Postgres, `wal_level=logical`, then watch the WAL echo of your own UPDATE |
+| **Run** | the two-line [queued against confirmed](02-the-contract.md#see-it-yourself) comparison, and time the gap |
 | **Explain after** | why `queued` and `confirmed` are different states, and what sits between them |
 
 Everything else in this pack is a magnification of one stage in that path.
@@ -87,6 +87,10 @@ Start with [research/](research/README.md), which sorts the literature into thre
 read in the order given in
 [shared-state-concurrency](research/shared-state-concurrency.md#go-deeper).
 
+**Run:** reproduce stale-generation in two terminals
+([shared-state-concurrency](research/shared-state-concurrency.md#see-it-yourself)), then extend it
+to the cross-object case that most systems fail.
+
 **Explain after:** why several 2026 groups independently concluded that a tool returning is not
 settlement, and what that implies for anything calling itself an agent framework.
 
@@ -102,6 +106,9 @@ Applies to this pack too. The full standard is [07-measuring-it.md](07-measuring
 | How many repetitions, decided in advance? | otherwise the best of N is being reported |
 | What was protected from regressing? | a claim with no protected metric traded something away silently |
 | What did it cost to run? | capacity without cost is not a service |
+
+Then [measure the noise floor](research/evaluation-and-failure.md#see-it-yourself) of whatever
+harness produced the claim. Most reported coordination gains do not clear it.
 
 ## Where the open problems are
 

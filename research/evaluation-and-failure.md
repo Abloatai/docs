@@ -71,6 +71,16 @@ coordination configuration. The [Always-On Agents](https://arxiv.org/abs/2606.30
 proposes AOEP-v0, a pilot contract scoring state mutation and recovery obligations rather than
 answer quality, which is layers 1 and 2 made scoreable.
 
+## See it yourself
+
+Measure your own noise floor before believing anyone's coordination result, including this
+repository's. Take one configuration, disable the coordination layer so both arms are inert,
+and run the identical setup under two seeds at n=100.
+
+The spread between those arms is your floor. Any reported gain smaller than it is unresolvable
+on that harness, no matter how the p-value looks. In the paper's case the floor reached 18
+percentage points on a single seed and failed to reproduce on the second.
+
 ## Go deeper
 
 | Read | For |

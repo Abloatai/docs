@@ -89,6 +89,28 @@ Write-time mediation against isolate-and-merge is exactly the commit chokepoint 
 branch. One paper is not settled science, and the margins should be read next to the
 [noise floor](evaluation-and-failure.md#how-much-coordination-gain-is-real).
 
+## See it yourself
+
+Stale-generation takes two terminals and no framework. Read a row, wait thirty seconds standing
+in for inference, then write a value derived from what you read. During the wait, change the same
+row from the other terminal.
+
+The unguarded version lands a write computed from state that no longer exists, and nothing
+reports an error. The guarded version refuses it:
+
+```ts
+await using claim = await ablo.orders.claim({ id });
+
+const priced = await pricingAgent(claim.data);   // thirty seconds of inference
+
+await ablo.orders.update({ id, data: priced, claim, wait: 'confirmed' });
+// rejected if the premise moved while the agent was thinking
+```
+
+Then extend it: have the second terminal write a *different* row that the first one read from.
+That is the cross-object premise case, and most systems, including systems that pass the first
+test, fail this one.
+
 ## Go deeper
 
 | Read in this order | Why |

@@ -52,6 +52,22 @@ the authoritative feed promotes one to the other. And publication is durable, or
 replayable, idempotent and observable, which is what makes recovery of a slow or disconnected
 observer exact rather than approximate.
 
+## See it yourself
+
+The two receipt states are one argument apart:
+
+```ts
+await ablo.orders.update({ id, data: { status: 'approved' } });
+// returns on durable acceptance: queued
+
+await ablo.orders.update({ id, data: { status: 'approved' }, wait: 'confirmed' });
+// returns only after the authoritative database echoes the change back
+```
+
+Time both. The gap between them is the WAL round trip, and it is the difference between "we
+accepted this" and "the source of truth agrees". Run the same call twice with the same
+idempotency identity and the row changes once.
+
 ## Invariants
 
 Any optimisation intended for production preserves all of these:
