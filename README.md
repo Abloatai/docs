@@ -15,6 +15,7 @@
 </p>
 
 <p align="center">
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-2563eb?style=flat-square" alt="license" /></a>
   <img src="https://img.shields.io/badge/status-orientation%20brief-2563eb?style=flat-square" alt="status" />
   <img src="https://img.shields.io/badge/updated-2026--08--01-22c55e?style=flat-square" alt="updated" />
 </p>
@@ -95,3 +96,7 @@ reporting.
 
 The engine and the published SDKs live in [Abloatai/ablo](https://github.com/Abloatai/ablo).
 Product documentation is at [docs.abloatai.com](https://docs.abloatai.com).
+
+## License
+
+Apache License 2.0. See [LICENSE](./LICENSE) and [NOTICE](./NOTICE).
