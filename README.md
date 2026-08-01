@@ -10,6 +10,7 @@
   <a href="01-the-space.md">Start here</a> &nbsp;|&nbsp;
   <a href="02-the-contract.md">The contract</a> &nbsp;|&nbsp;
   <a href="04-the-evidence.md">Evidence</a> &nbsp;|&nbsp;
+  <a href="domains/ontology-and-schema.md">Ontology</a> &nbsp;|&nbsp;
   <a href="08-learning-path.md">Learning path</a> &nbsp;|&nbsp;
   <a href="https://github.com/Abloatai/ablo">Ablo on GitHub</a>
 </p>
@@ -41,6 +42,31 @@ Holding those answers at a high rate has a price in latency, throughput and cost
 states that price plainly, including the experiments that failed and the parts that remain
 unproven. Every file ends with what is still open.
 
+## What it coordinates over
+
+Ablo coordinates changes to a **declared thing**: a document, an order, a button, an aircraft.
+The thing has a name, typed fields, relations, and rules about who may change it and what
+happens when two actors try at once. Without that declaration nothing else is expressible. You
+cannot detect a conflict on a value whose identity you cannot name, scope authority to a thing
+that has no shape, or write an audit line a person can read.
+
+The vocabulary belongs to the organisation, never to Ablo. A task in a hospital is not a task in
+a factory, so there is no world ontology to adopt. Ablo takes the models a customer has already
+declared and adds a coordination overlay.
+
+| Layer | Owner | Varies by organisation |
+| --- | --- | --- |
+| The things and their fields | the customer | always |
+| Identity, ownership, conflict disposition, tenancy, freshness | Ablo | never |
+
+The nouns are never universal. The overlay always is. That is also what makes the physical
+direction the same mechanism rather than a new one: a lamp, a vehicle and an aircraft are
+declared things too, with two additions, a validity interval on every observation and commands
+that cannot be undone.
+
+[domains/ontology-and-schema.md](domains/ontology-and-schema.md) has the argument, the schema
+doing the work, and where Palantir reached the same conclusion from the enterprise direction.
+
 ## Start
 
 An hour, to get oriented:
@@ -54,7 +80,7 @@ Then, to go deep:
 
 5. [05-why-it-is-hard.md](05-why-it-is-hard.md) the systems difficulty, stated precisely
 6. [06-scale-regimes.md](06-scale-regimes.md) why one million per second is three different targets
-7. [domains/](domains/README.md) the eight technical fields, one file each
+7. [domains/](domains/README.md) the nine technical fields, one file each
 8. [research/](research/README.md) the agent-coordination literature, through July 2026
 9. [07-measuring-it.md](07-measuring-it.md) how to read a performance claim, including ours
 
