@@ -5,6 +5,16 @@ The contracts, the client, the coordination primitives and the CLI are public in
 server that implements the write path is not public, so this map names the contract each concept
 is defined by rather than the engine that enforces it.
 
+## The packages
+
+| Package | What it is |
+| --- | --- |
+| [transaction](https://github.com/Abloatai/ablo/tree/main/packages/transaction) | the canonical contracts: reads, commits, settlement, claims, durable observation. Everything below lives here unless noted |
+| [ablo](https://github.com/Abloatai/ablo/tree/main/packages/ablo) | the published SDK, for coordinated reads, commits, claims, observation and reactive applications |
+| [humans](https://github.com/Abloatai/ablo/tree/main/packages/humans) | the optional human-facing local-state package: presence, live queries, React bindings |
+| [cli](https://github.com/Abloatai/ablo/tree/main/packages/cli) | the `ablo` command line: set up, connect a database, push a schema |
+| [agent](https://github.com/Abloatai/ablo/tree/main/packages/agent) | AI SDK composition and coordination adapters |
+
 ## The concepts, in source
 
 | Concept | File |
@@ -16,6 +26,25 @@ is defined by rather than the engine that enforces it.
 | Claims, on the wire | [wire/claims.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claims.ts), [wire/claimEvent.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claimEvent.ts) |
 | Error envelope and code registry | [wire/errorEnvelope.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/errorEnvelope.ts), [errorCodes.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/errorCodes.ts) |
 | Protocol version | [wire/protocolVersion.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/protocolVersion.ts) |
+
+## Schema and ontology
+
+The declaration everything else derives from ([ontology-and-schema](domains/ontology-and-schema.md)).
+
+| Concept | File |
+| --- | --- |
+| A model: fields plus options, row type inferred | [schema/model.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/model.ts) |
+| Fields and their metadata | [schema/field.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/field.ts) |
+| Relations between things | [schema/relation.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/relation.ts) |
+| What happens when two actors write | [schema/coordination.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/coordination.ts) |
+| Who can see it | [schema/tenancy.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/tenancy.ts) |
+| Where it may live | [schema/residency.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/residency.ts) |
+| Documentation, generated from the schema | [schema/openapi.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/openapi.ts) |
+| Drift against the real database | [schema/diff.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/diff.ts) |
+| Table provisioning | [schema/ddl.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/schema/ddl.ts) |
+
+`coordination.ts` is the surprising one: conflict disposition is authored beside the fields, so
+`coordination.humansOverwrite().agentsReject()` is part of the model rather than a policy file.
 
 ## Settlement
 
@@ -70,7 +99,12 @@ everything else links to it.
 
 ## Not public
 
-The engine that enforces the write path, tails the WAL and publishes deltas is not in the public
-repository. Where this pack describes commit coordination, logical decoding, publication
-grouping or benchmark topology, it is describing that server. The contracts it speaks are all
-above.
+The engine is a separate, private repository: the commit chokepoint, the logical-replication
+reader, publication and fan-out, and the benchmark topology behind
+[04-the-evidence.md](04-the-evidence.md). Nothing in this pack names its internals, because the
+useful thing to read is the contract rather than one implementation of it.
+
+That split is deliberate rather than a redaction. Every guarantee in
+[02-the-contract.md](02-the-contract.md) is expressed as a type above, and a type is checkable:
+you can read what `pendingWrite` distinguishes without trusting a description of the server that
+produces it.
