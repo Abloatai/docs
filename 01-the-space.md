@@ -66,6 +66,13 @@ The pattern is consistent. The read-path products stop before the write. The wri
 products own the storage. The transport products deliver bytes and make no claim about
 authority. The convergent products converge without deciding who was allowed to act.
 
+One thing every actor has to share before any of this works: a vocabulary. Ablo coordinates
+changes to declared things, a document, an order, a button, an aircraft, and it takes that
+vocabulary from the organisation rather than imposing one, because a task in a hospital is not a
+task in a factory. [Palantir's Ontology](https://www.palantir.com/docs/foundry/architecture-center/ontology-system)
+reached the same conclusion from the enterprise direction. See
+[domains/ontology-and-schema.md](domains/ontology-and-schema.md).
+
 Ablo's bet is that the composition is the product: customer-owned storage, mediated authority,
 WAL-derived settlement, claims and fencing, replayable publication, and an explicit gap between
 what was committed and what was observed.

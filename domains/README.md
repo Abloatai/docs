@@ -10,6 +10,7 @@ keeps and which it delegates.
 
 | Domain | The question it owns |
 | --- | --- |
+| [ontology-and-schema.md](ontology-and-schema.md) | why every change is to a declared thing, and whose vocabulary declares it |
 | [postgres-under-hot-updates.md](postgres-under-hot-updates.md) | why an indexed UPDATE costs what it costs |
 | [logical-decoding-and-cdc.md](logical-decoding-and-cdc.md) | how a committed change becomes an observable event, and what breaks |
 | [ordering-and-frontiers.md](ordering-and-frontiers.md) | which order is semantically necessary, and what a cursor is |

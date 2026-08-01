@@ -15,6 +15,9 @@ stages in [05](05-why-it-is-hard.md#an-update-is-not-one-operation).
 
 Everything else in this pack is a magnification of one stage in that path.
 
+**Also read:** [ontology-and-schema](domains/ontology-and-schema.md). Nothing else in the pack
+is expressible without a declared thing to change, and it is the shortest file that explains why.
+
 ## 2. The database underneath
 
 | Read | For |
