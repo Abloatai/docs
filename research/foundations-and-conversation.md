@@ -1,8 +1,9 @@
 # Classical foundations, and the conversation wave
 
-Neither of these bodies of work solves Ablo's problem. Both supply vocabulary that the newer
-shared-state work assumes, and reading them prevents rediscovering questions that were settled
-decades ago.
+Both of these bodies of work supply vocabulary that the newer shared-state research assumes, and
+both answer questions that would otherwise get rediscovered from scratch. They operate one layer
+above Ablo's problem: they decide what actors intend and say, where Ablo decides what actually
+commits.
 
 ## Classical foundations: commitment, plans, delegation
 
