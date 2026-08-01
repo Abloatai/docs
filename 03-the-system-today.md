@@ -98,7 +98,7 @@ Reading this pack without this table produces an inflated picture of the system.
 | Single-plane capacity near 100,000 deltas/sec | measured under one documented topology, see [04](04-the-evidence.md) |
 | Multi-plane ownership, rebalancing, quotas, isolation | architectural boundary exists, production proof does not |
 | Cross-organisation signed evidence, revocation, dispute handling | direction only |
-| Physical-world actuation and observation semantics | model only, research and product work |
+| Physical-world state: observation, actuation, freshness | the declared next direction. Modelled, not built |
 
 ## Still open
 

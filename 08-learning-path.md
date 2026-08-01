@@ -91,6 +91,10 @@ read in the order given in
 ([shared-state-concurrency](research/shared-state-concurrency.md#see-it-yourself)), then extend it
 to the cross-object case that most systems fail.
 
+**Then:** [physical-world-state](domains/physical-world-state.md), because the next step is
+agents acting on real objects, where a wrong premise cannot be rolled back. Read the VDA 5050
+state message and ask what it does not tell you.
+
 **Explain after:** why several 2026 groups independently concluded that a tool returning is not
 settlement, and what that implies for anything calling itself an agent framework.
 

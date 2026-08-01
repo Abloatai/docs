@@ -34,8 +34,14 @@ narrower:
 
 For digital state, a committed row and its WAL record can be the settlement boundary. For
 physical state, desired, commanded, acknowledged and observed have to stay four distinct facts
-rather than collapsing into one mutable boolean. That model, and what it costs to maintain, is
-in [domains/physical-world-state.md](domains/physical-world-state.md).
+rather than collapsing into one mutable boolean.
+
+That is the next direction rather than a distant one. An agent acting on a warehouse, a vehicle
+or a building needs to know what is true about a physical object right now, how stale that
+reading is, whether it is allowed to change it, and whether its last command landed. Today that
+state lives inside device protocols and fleet controllers, which move messages reliably and say
+nothing about authority or settlement. The full model, the standards that already exist, and
+what they leave open is [domains/physical-world-state.md](domains/physical-world-state.md).
 
 ## Who else is in this space, and where they stop
 

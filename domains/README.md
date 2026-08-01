@@ -17,7 +17,7 @@ keeps and which it delegates.
 | [fanout-and-incremental-views.md](fanout-and-incremental-views.md) | who needs to hear about a change |
 | [backpressure-and-overload.md](backpressure-and-overload.md) | what happens when a consumer cannot keep up |
 | [capabilities-and-evidence.md](capabilities-and-evidence.md) | who was allowed, and who can later prove it |
-| [physical-world-state.md](physical-world-state.md) | how a commitment relates to a physical fact |
+| [physical-world-state.md](physical-world-state.md) | what an agent must know before acting on a real object |
 
 ## Responsibility map
 
