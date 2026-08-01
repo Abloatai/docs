@@ -95,15 +95,6 @@ specifications are stable and were not.
 - [Temporal error handling](https://docs.temporal.io/best-practices/error-handling): idempotency
   keys derived from run and activity identity.
 
-## Delegated authorisation
-
-- [Macaroons](https://research.google/pubs/macaroons-cookies-with-contextual-caveats-for-decentralized-authorization-in-the-cloud/):
-  decentralised delegation through contextual caveats appended by the holder.
-- [Biscuit specification](https://doc.biscuitsec.org/reference/specifications.html): public-key
-  verifiable tokens with append-only Datalog attenuation.
-- [Biscuit revocation](https://www.biscuitsec.org/docs/guides/revocation/): why offline
-  attenuation does not remove the need for revocation state.
-
 ## Devices and robotics
 
 - [MQTT 5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html): publish and subscribe

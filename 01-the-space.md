@@ -8,7 +8,7 @@ a service applying a policy, a robot moving an object, a sensor contradicting al
 a second organisation confirming or rejecting the result.
 
 Each actor holds a partial and possibly stale view. Each may retry. Several act concurrently.
-Authority gets delegated and attenuated along the way, and the process routinely crosses an
+Authority gets delegated and narrowed along the way, and the process routinely crosses an
 administrative boundary. A database transaction is necessary for all of this and sufficient for
 none of it. It does not answer:
 
@@ -45,16 +45,16 @@ every claim below are in [09-reading-list.md](09-reading-list.md).
 
 | System | Owns | Explicitly does not own |
 | --- | --- | --- |
-| **PostgreSQL** | atomic row changes, constraints, isolation, durable WAL | who was allowed to ask, what a subscriber has applied |
-| **ElectricSQL** | the read path out of Postgres into clients, as cacheable HTTP shape logs | the write path. Electric states plainly that syncing data back into Postgres is the application's problem |
-| **Debezium** | extracting committed changes as an event stream, with slot and failover handling | authorisation, conflict resolution, receipts. CDC observes a write that already happened |
-| **Kafka** | durable replay, partition-local order, consumer offsets, compaction | that a broker record corresponds to a database transaction or an authorised action |
-| **Materialize** | incrementally maintained SQL views over a CDC stream, with a progress-carrying subscription | the write path and the authority model |
-| **Temporal** | durable execution of *your* code across failures, with replay and retries | shared state between independent parties. Activities are at-least-once, so idempotency is yours to build |
-| **TigerBeetle** | a purpose-built transaction state machine at very high rates | generality. It owns its storage and its schema, which is exactly why it is fast |
-| **FoundationDB, Spanner** | strict transactional guarantees, with the machinery on display | working against a database the customer already owns and operates |
-| **CRDTs, local-first** | offline edits that deterministically converge | non-commutative invariants such as "one holder at a time" or "balance may not go negative" |
-| **MQTT, ROS 2 / DDS** | device transport with real delivery, deadline and liveliness policies | organisational authority. A QoS acknowledgement is not a completed physical action |
+| **[PostgreSQL](https://www.postgresql.org/docs/current/mvcc.html)** | atomic row changes, constraints, isolation, durable WAL | who was allowed to ask, what a subscriber has applied |
+| **[ElectricSQL](https://electric.ax/docs/sync/api/http)** | the read path out of Postgres into clients, as cacheable HTTP shape logs | the write path. Electric states plainly that syncing data back into Postgres is the application's problem |
+| **[Debezium](https://debezium.io/documentation/reference/3.6/connectors/postgresql.html)** | extracting committed changes as an event stream, with slot and failover handling | authorisation, conflict resolution, receipts. CDC observes a write that already happened |
+| **[Kafka](https://kafka.apache.org/documentation/#design)** | durable replay, partition-local order, consumer offsets, compaction | that a broker record corresponds to a database transaction or an authorised action |
+| **[Materialize](https://materialize.com/docs/sql/subscribe/)** | incrementally maintained SQL views over a CDC stream, with a progress-carrying subscription | the write path and the authority model |
+| **[Temporal](https://docs.temporal.io/activity-definition)** | durable execution of *your* code across failures, with replay and retries | shared state between independent parties. Activities are at-least-once, so idempotency is yours to build |
+| **[TigerBeetle](https://docs.tigerbeetle.com/coding/requests)** | a purpose-built transaction state machine at very high rates | generality. It owns its storage and its schema, which is exactly why it is fast |
+| **[FoundationDB](https://apple.github.io/foundationdb/architecture.html), [Spanner](https://research.google.com/archive/spanner-osdi2012.pdf)** | strict transactional guarantees, with the machinery on display | working against a database the customer already owns and operates |
+| **[CRDTs](https://people.eecs.berkeley.edu/~kubitron/courses/cs262a-F21/handouts/papers/Shapiro-CRDT.pdf), [local-first](https://www.inkandswitch.com/essay/local-first/)** | offline edits that deterministically converge | non-commutative invariants such as "one holder at a time" or "balance may not go negative" |
+| **[MQTT](https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html), [ROS 2](https://docs.ros.org/en/rolling/Concepts/Intermediate/About-Quality-of-Service-Settings.html)** | device transport with real delivery, deadline and liveliness policies | organisational authority. A QoS acknowledgement is not a completed physical action |
 
 The pattern is consistent. The read-path products stop before the write. The write-path
 products own the storage. The transport products deliver bytes and make no claim about
@@ -73,30 +73,28 @@ date first.
 
 ## The commercial shape of the neighbourhood
 
-Electric Cloud's published pricing is a useful external anchor for what this space is worth
-today, because it prices the exact read path Ablo also runs: one dollar per million writes
-(chunked at 10KB), ten cents per GB-month of retention, two dollars per million writes emitted
-into the shape log from the replication stream, and nothing at all for reads, fan-out,
-concurrent users or connections.
+[Electric Cloud's pricing](https://electric.ax/blog/2026/04/02/electric-cloud-pricing) is the
+useful external anchor, because it prices the exact read path Ablo also runs.
 
-Two things follow. First, the market has already decided that fan-out is not separately
-billable, which pushes the cost of fan-out onto the vendor's architecture rather than the
-customer's invoice. That is a direct argument for the subscription-aware fan-out work in
-[domains/fanout-and-incremental-views.md](domains/fanout-and-incremental-views.md). Second,
-the billable unit is the write. Ablo's unit is a mediated, authorised, confirmed write, which
-is strictly more work per unit than an observed one. Whether that difference is defensible at
-the same order of price is an open commercial question, not a settled one.
+| Unit | Price |
+| --- | --- |
+| Writes | $1 per million, chunked at 10 KB |
+| Retention | $0.10 per GB-month |
+| Writes emitted to the shape log | $2 per million |
+| Reads, fan-out, concurrent users, connections | free |
 
-## Questions this raises
+Two things follow. The market has already decided fan-out is not separately billable, which puts
+its cost on the vendor's architecture rather than the customer's invoice, and that is the
+argument for [subscription-aware fan-out](domains/fanout-and-incremental-views.md). And the
+billable unit is the write, where Ablo's unit is a mediated, authorised, confirmed write:
+strictly more work per unit than an observed one. Whether that is defensible at the same order
+of price is open.
 
-- If the read path is table stakes and priced near zero, is the mediated write the only part a
-  customer would pay a premium for? What evidence exists either way?
-- Electric declines the write path deliberately. Is that a scoping choice or a statement about
-  where the hard problems are? What does Ablo know that makes taking it worthwhile?
-- Which of the systems above would a well-resourced competitor extend into Ablo's position
-  fastest, and what part of the composition is hardest to copy?
-- Is "the composition is the product" a moat or a description of an integration burden? Which
-  specific customer problem is impossible to solve by wiring three of these together by hand?
-- Does an agent-heavy workload change the answer? Agents retry more, hold context longer, and
-  act concurrently more often than humans do. Which of the guarantees above becomes load-bearing
-  only when the actors are software?
+## Still open
+
+- Whether the mediated write is the part a customer pays a premium for, when the read path next
+  door is priced near zero and fan-out is free.
+- Which neighbouring system extends into this position fastest, and which part of the
+  composition is hardest to copy.
+- Which guarantee becomes load-bearing only when the actors are software rather than people.
+  Agents retry more, hold context longer, and act concurrently more often.

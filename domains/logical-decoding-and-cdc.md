@@ -1,70 +1,72 @@
 # Logical decoding and change data capture
 
-## The problem
+The WAL echo promotes a receipt from accepted to confirmed
+([settlement rule](../02-the-contract.md#the-settlement-rule)), so the decoder is a correctness
+component and an availability dependency on infrastructure Ablo does not own.
 
-The WAL echo is what promotes an Ablo receipt from accepted to confirmed
-([02-the-contract.md](../02-the-contract.md#the-settlement-rule)). That makes the decoder a
-correctness component, not a plumbing detail. It also makes it an availability dependency on
-infrastructure Ablo does not own: the customer's database, its disk, and its failover behaviour.
+## What the database gives you
 
-## What the field knows
+| Concern | Mechanism | Source |
+| --- | --- | --- |
+| Retention floor | `wal_keep_size` | [runtime-config-replication](https://www.postgresql.org/docs/current/runtime-config-replication.html) |
+| Disk-exhaustion cap | `max_slot_wal_keep_size`. Past it, segments are removed, the connection terminates, the slot is invalidated | [runtime-config-replication](https://www.postgresql.org/docs/current/runtime-config-replication.html) |
+| Headroom, in bytes | `pg_replication_slots.safe_wal_size` | [view-pg-replication-slots](https://www.postgresql.org/docs/current/view-pg-replication-slots.html) |
+| Why a slot died | `invalidation_reason`: WAL removed, rows removed, `wal_level` too low, idle timeout | [view-pg-replication-slots](https://www.postgresql.org/docs/current/view-pg-replication-slots.html) |
+| Failover, PG17+ | `pg_create_logical_replication_slot(..., failover => true)` plus `synchronized_standby_slots` | [logical-replication-failover](https://www.postgresql.org/docs/current/logical-replication-failover.html) |
+| Failover readiness | `synced AND NOT temporary AND invalidation_reason IS NULL`, verified rather than assumed | [logical-replication-failover](https://www.postgresql.org/docs/current/logical-replication-failover.html) |
+| Version boundary | Debezium `slot.failover` defaults to false and is **ignored** on PostgreSQL 16 and earlier | [Debezium PG connector](https://debezium.io/documentation/reference/3.6/connectors/postgresql.html) |
 
-**A replication slot is a promise the customer's disk has to keep.** A slot holds WAL until its
-consumer acknowledges. PostgreSQL bounds the damage with `max_slot_wal_keep_size`, which caps
-what slots may retain so the disk cannot be exhausted, and `wal_keep_size`, which sets a
-retention floor. Cross the cap and the required segments are removed, which terminates the
-connection and invalidates the slot.
+Ablo supports Aurora, RDS, Neon, Supabase and self-managed Postgres, so failover behaviour is
+per-provider and per-version rather than one guarantee.
 
-The observability for this is already in the database and is worth wiring into any product that
-depends on it. `pg_replication_slots` exposes `safe_wal_size`, the bytes that can still be
-written before the slot is at risk, and `invalidation_reason`, which names the cause: required
-WAL removed, required rows removed, `wal_level` insufficient for logical decoding, or an idle
-timeout. A product that reports "replication is behind" without those two columns is guessing.
+## What the read path next door looks like
 
-**Failover is newer and more conditional than it looks.** PostgreSQL 17 added failover slots:
-`pg_create_logical_replication_slot(..., failover => true)` or `ALTER_REPLICATION_SLOT ...
-FAILOVER`, combined with `synchronized_standby_slots` on the primary, synchronises slots to
-standbys so a consumer can resume after promotion. Readiness has to be verified rather than
-assumed, with the documented check being that a slot is `synced`, not `temporary`, and has a
-null `invalidation_reason`.
+ElectricSQL serves shapes over plain HTTP: request a shape with `offset`, use `-1` for an
+initial sync, then follow an append-only log carrying `up-to-date`, `snapshot-end` and
+`must-refetch` ([HTTP API](https://electric.ax/docs/sync/api/http)). `must-refetch` is the same
+admission Ablo's bounded-resnapshot path makes, stated in the protocol instead of raised as an
+error.
 
-Debezium's connector makes the version boundary explicit: its `slot.failover` property defaults
-to false and is ignored entirely when the primary runs PostgreSQL 16 or earlier. Ablo supports
-customers on Aurora, RDS, Neon, Supabase and self-managed Postgres, so the honest position is
-that failover behaviour is per-provider and per-version, not a single guarantee.
+## The decode-once choice
 
-**The read path has a working commercial shape next door.** ElectricSQL syncs shapes out of
-Postgres over plain HTTP: a client requests a shape with an `offset`, uses `-1` for an initial
-sync, and follows an append-only shape log with control messages including `up-to-date`,
-`snapshot-end`, and `must-refetch` when the server can no longer serve continuity from the
-client's position. `must-refetch` is the same admission Ablo's bounded-resnapshot path makes,
-made visible in the protocol rather than hidden in an error.
+| | Decode per server | One fenced decoder per source |
+| --- | --- | --- |
+| CPU and memory bandwidth | multiplied by server count | paid once |
+| Subscription lookup | duplicated per consumer | done once, routed compact |
+| Recovery boundaries | one | two |
+| Safe acknowledgement point | that server's position | highest **contiguous** LSN across all downstream partitions |
 
-## The architectural choice ahead
+The invariant either way: never acknowledge source WAL past data that cannot be reconstructed
+after the relevant failure.
 
-Repeating decode, projection and object construction in each server process multiplies CPU and
-memory bandwidth, and independent consumers duplicate subscription lookup. The alternative is
-one fenced decoder per source feeding a replayable internal segment stream, so each WAL
-transition is decoded once and publication workers route compact records independently.
+## See it yourself
 
-That introduces a second acknowledgement and recovery boundary, and one invariant governs it:
-the decoder must never acknowledge source WAL past data that cannot be reconstructed after the
-relevant failure. The safe acknowledgement point is the highest contiguous LSN across all
-downstream partitions, which is not the same as the highest LSN any of them has reached.
+Slot health is one query, and it answers "how close is this customer to a disk incident".
 
-## Questions this raises
+```sql
+SELECT slot_name, active, wal_status, safe_wal_size,
+       pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)) AS behind,
+       invalidation_reason
+FROM pg_replication_slots;
+```
 
-- Are `safe_wal_size` and `invalidation_reason` surfaced to operators and to the customer today?
-  At what threshold does anyone get told?
-- Which supported providers actually expose PostgreSQL 17 failover slots, and what happens on
-  the ones that do not?
-- What is the measured crossover between replaying from a retained slot and taking a fresh
-  snapshot, as a function of lag and table size?
-- What does an observer see during a resnapshot? Is there an equivalent of `must-refetch` in the
-  Ablo protocol, and is it a first-class message or an error?
-- If decode moved to one fenced decoder per source, what is the new recovery story, and how is
-  the highest contiguous safe LSN computed cheaply?
-- A write that bypasses Ablo still shows up in the WAL. How is it attributed, and what does a
-  customer see when it appears in their audit trail with no capability behind it?
-- How long can a customer's database be unreachable before Ablo's position becomes
-  unrecoverable, and is that number written down anywhere a customer can act on?
+Stop the consumer and watch `behind` grow and `safe_wal_size` shrink. That is the entire
+operational risk of the read path, visible in one row.
+
+## Go deeper
+
+| Read | For |
+| --- | --- |
+| [Logical decoding concepts](https://www.postgresql.org/docs/current/logicaldecoding-explanation.html) | how WAL becomes application-level change, and what a slot retains |
+| [Debezium PostgreSQL connector](https://debezium.io/documentation/reference/3.6/connectors/postgresql.html) | the same problem operated at scale for a decade, including the failure modes |
+| [Logical replication failover](https://www.postgresql.org/docs/current/logical-replication-failover.html) | why failover slots are newer and more conditional than they look |
+| [Electric HTTP API](https://electric.ax/docs/sync/api/http) | a read path built as a cacheable log with offsets, and the control messages it needs |
+
+## Still open
+
+- The sustained outage envelope per provider: how Aurora, RDS, Neon, Supabase and self-managed
+  Postgres behave as retained WAL and recovery time grow. Nobody has characterised this.
+- The crossover between replaying from a retained slot and resnapshotting, as a function of lag
+  and table size.
+- Whether one decoding pass can safely feed all publication work, and how the highest contiguous
+  safe LSN is computed cheaply when partitions progress independently.

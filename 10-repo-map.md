@@ -1,42 +1,76 @@
-# 10. Where this lives in the codebase
+# 10. Where this lives in code
 
-Useful only with repository access. Paths verified on 2026-08-01. When the source and any
-document disagree, the source wins and the discrepancy is worth reporting.
+The contracts, the client, the coordination primitives and the CLI are public in
+[Abloatai/ablo](https://github.com/Abloatai/ablo). Every link below points at real source. The
+server that implements the write path is not public, so this map names the contract each concept
+is defined by rather than the engine that enforces it.
 
-## Follow one transaction
+## The concepts, in source
 
-The most useful first mental model is a single write moving through the real system. The stages
-map to files in this order:
-
-| Stage | Where |
+| Concept | File |
 | --- | --- |
-| commit coordination, the chokepoint every write passes | `apps/sync-server/src/mutators/commit.ts` and `apps/sync-server/src/mutators/commit/` |
-| claim, lease and fence validation | `apps/sync-server/src/presence/ClaimLeaseStore.ts`, `apps/sync-server/src/mutators/claim-guard.ts` |
-| delta persistence and emission | `apps/sync-server/src/mutators/commit/deltaSink.ts` and the sync-log modules beside it |
-| source registration, mapping, preflight, decoding, recovery | `apps/sync-server/src/replication/postgres/` |
-| headless transaction contracts and wire types | `packages/transaction/` |
-| local reactive application and client state | `packages/humans/src/local/` |
-| load driver and disposable cloud topology | `apps/sync-server/scripts/bench-commit-throughput.cts`, `infra/terraform/environments/bench-ondemand/` |
+| Commit request shape | [wire/commit.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/commit.ts) |
+| Delta | [wire/delta.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/delta.ts) |
+| Cursor | [wire/feedCursor.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/feedCursor.ts) |
+| Feed events | [wire/feedEvent.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/feedEvent.ts) |
+| Claims, on the wire | [wire/claims.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claims.ts), [wire/claimEvent.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claimEvent.ts) |
+| Error envelope and code registry | [wire/errorEnvelope.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/errorEnvelope.ts), [errorCodes.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/errorCodes.ts) |
+| Protocol version | [wire/protocolVersion.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/protocolVersion.ts) |
 
-## Documents worth reading alongside
+## Settlement
 
-| Document | What it covers |
+| Concept | File |
 | --- | --- |
-| `docs/ablo-vision.md` | the long-horizon collaboration thesis |
-| `docs/whitepaper.md` | protocol concepts: commits, receipts, capabilities, deltas |
-| `docs/write-path-and-roles-explained.md` | the mediated write boundary and the database privilege model |
-| `docs/wal-robustness-explained.md` | WAL failure and recovery semantics in detail |
-| `docs/investor-technical-thesis-memo.md` | product and system framing with the same honest gaps |
-| `docs/plans/throughput-next-performance-handoff-2026-07-30.md` | the source of every number in [04](04-the-evidence.md), run by run |
-| `docs/plans/throughput-10k-handbook-and-100k-roadmap.md` | the performance contract, historical architecture, and benchmark discipline |
-| `docs/decisions/` | the architecture decision records, which carry the reasoning this pack summarises |
+| Commit envelope | [settlement/commitEnvelope.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/commitEnvelope.ts) |
+| Idempotency key | [settlement/idempotencyKey.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/idempotencyKey.ts) |
+| Accepted but unconfirmed work | [settlement/pendingWrite.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/pendingWrite.ts) |
+| Durable writes | [durableWrites.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/durableWrites.ts) |
+| The delta row in the log | [log/syncDeltaRow.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/log/syncDeltaRow.ts), [syncLog/contract.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/syncLog/contract.ts) |
 
-## Conventions that explain the shape of the code
+`pendingWrite.ts` is the file to read if only one: it is `queued` against `confirmed` expressed
+as a type ([the settlement rule](02-the-contract.md#the-settlement-rule)).
 
-`packages/transaction/CONVENTIONS.md` states the rule the whole repository is organised around:
-one definition site per shape, everything else derived. Schemas define, types are inferred,
-documentation is generated. A hand-written second copy of a contract is treated as a defect
-because nothing fails when the copies drift.
+## Coordination
 
-This pack follows the same rule for prose, which is why a fact appears in exactly one file here
-and everything else links to it.
+| Concept | File |
+| --- | --- |
+| Waiting for a claim | [coordination/awaitClaimGrant.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/coordination/awaitClaimGrant.ts) |
+| Keeping one alive | [coordination/claimHeartbeatLoop.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/coordination/claimHeartbeatLoop.ts) |
+| Deciding two writes collide | [coordination/targetConflict.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/coordination/targetConflict.ts) |
+| What a claim covers | [footprint.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/footprint.ts), [coordination/locator.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/coordination/locator.ts) |
+
+## Credentials
+
+| Concept | File |
+| --- | --- |
+| Key kinds | [auth/credentialKind.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/credentialKind.ts), [auth/apiKey.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/apiKey.ts) |
+| Minting a scoped session | [auth/sessionMint.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/sessionMint.ts) |
+| Scope and its lifecycle | [auth/capability.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/capability.ts), [auth/capabilityLifecycle.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/capabilityLifecycle.ts) |
+| Who is acting | [auth/identity.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/identity.ts) |
+| What a browser may hold | [auth/browserCredentialSafety.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/browserCredentialSafety.ts) |
+
+## The client side
+
+| Concept | File |
+| --- | --- |
+| Applying deltas | [local/SyncClient.ts](https://github.com/Abloatai/ablo/blob/main/packages/humans/src/local/SyncClient.ts) |
+| The durable position | [local/logPosition.ts](https://github.com/Abloatai/ablo/blob/main/packages/humans/src/local/logPosition.ts) |
+| Local persistence | [local/persistence.ts](https://github.com/Abloatai/ablo/blob/main/packages/humans/src/local/persistence.ts), [local/mutationPersistence.ts](https://github.com/Abloatai/ablo/blob/main/packages/humans/src/local/mutationPersistence.ts) |
+| The local graph | [local/Database.ts](https://github.com/Abloatai/ablo/blob/main/packages/humans/src/local/Database.ts) |
+
+## The convention that shapes all of it
+
+[packages/transaction/CONVENTIONS.md](https://github.com/Abloatai/ablo/blob/main/packages/transaction/CONVENTIONS.md)
+states the rule the codebase is organised around: one definition site per shape, everything else
+derived. Schemas define, types are inferred, documentation is generated, and a hand-written
+second copy of a contract is treated as a defect because nothing fails when the copies drift.
+
+This pack follows the same rule for prose, which is why each fact appears in one file and
+everything else links to it.
+
+## Not public
+
+The engine that enforces the write path, tails the WAL and publishes deltas is not in the public
+repository. Where this pack describes commit coordination, logical decoding, publication
+grouping or benchmark topology, it is describing that server. The contracts it speaks are all
+above.

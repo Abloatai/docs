@@ -10,7 +10,7 @@ this pack links here rather than restating them.
 | --- | --- |
 | **Actor** | a human, service, agent, device or organisation that reads or attempts to change state |
 | **Plane** | an independently owned coordination domain, normally scoped by organisation, project, and branch or environment |
-| **Capability** | a verifiable, attenuable grant: which actor may perform which action over which resource and scope |
+| **Capability** | a scoped grant carried by a minted key: which actor may perform which operations over which sync groups, with a TTL |
 | **Claim** | a time-bounded ownership or exclusion grant used to coordinate concurrent work |
 | **Fence** | a monotonic token that makes a stale claim holder detectably stale |
 | **Commit** | an idempotent request to apply one or more mutations under a defined authority and conflict policy |
@@ -19,6 +19,15 @@ this pack links here rather than restating them.
 | **Cursor** | a position or frontier stating exactly what an observer has applied |
 | **Audit record** | an attributable record of the authority, intent, result and evidence behind an action |
 | **Observation** | a report about external or physical state, distinct from a desired-state mutation |
+
+Each of these is a type in the public contract package, not a description:
+[commit](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/commit.ts),
+[delta](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/delta.ts),
+[cursor](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/feedCursor.ts),
+[claim](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claims.ts),
+[capability](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/capability.ts),
+[receipt](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/pendingWrite.ts).
+Full map in [10-repo-map.md](10-repo-map.md).
 
 ## The settlement rule
 
@@ -33,6 +42,9 @@ For a mediated write into customer-owned Postgres:
 7. observe the authoritative logical-WAL echo
 8. publish ordered deltas
 9. advance observers only after exact application
+
+The idempotency identity that makes step 1 safe to retry is
+[settlement/idempotencyKey.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/idempotencyKey.ts).
 
 Two consequences carry most of the weight. A successful application write is never silently
 treated as globally observed: `queued` and `confirmed` are different receipt states, and only
@@ -82,19 +94,11 @@ A write that bypasses Ablo and goes straight to the customer database still appe
 so it remains observable. It was not governed before execution and its attribution is weaker.
 That difference stays explicit rather than being smoothed over.
 
-## Questions this raises
+## Still open
 
-- Which invariants are enforced by code, and which currently survive on discipline? For each
-  one, what test would fail if it were violated?
-- `queued` and `confirmed` are distinct states. What is the maximum time a receipt can sit at
-  `queued` before an operator should care, and what happens to a client waiting on it?
-- Idempotency: what exactly is the key derived from, how long is it retained, and what happens
-  to a retry that arrives after the retention window?
-- Fencing makes a stale claim holder detectably stale. Detectable by whom, at which check, and
-  what does the holder observe when it loses?
-- The privilege check runs at connect time. What detects privilege drift afterwards, when a
-  customer DBA grants the writer something new?
-- "No unmeasured handoff of work to an overloaded client" is an invariant. How is client-side
-  apply cost measured today, and on which device classes?
-- Which of these invariants would a customer actually notice being violated, and which are
-  internal hygiene? That ranking decides what to defend hardest under load.
+- Which invariants are enforced by code, and which survive on discipline. Each one needs the
+  test that would fail if it were violated.
+- How long a receipt may sit at `queued` before an operator should care, and what a client
+  waiting on it observes.
+- What detects privilege drift after connect, when a customer DBA grants the writer something
+  new.

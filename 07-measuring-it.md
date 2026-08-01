@@ -87,12 +87,17 @@ metric moves beyond noise, every correctness gate passes, no unbounded queue app
 the public contract is preserved or explicitly revised, the result survives a sustained run and
 a relevant failure test, and the added complexity is justified by the gain.
 
-## Questions this raises
+## Go deeper
 
-- Is the current benchmark open-loop or closed-loop, and where is that decided in the driver?
-- Which stage timestamps exist today, and which would have to be added to attribute drain?
-- What is the measured run-to-run variance of throughput and of final drain on this topology?
-- Has any result been produced under injected failure rather than a clean run?
-- Which correctness properties are checked from observer state rather than server counters?
-- What is the cost, in dollars, of one full benchmark campaign, and does that shape which
-  experiments get run?
+| Read | For |
+| --- | --- |
+| [How Not to Measure Latency](https://qconsf.com/sf2012/dl/qcon-sanfran-2012/slides/GilTene_HowNotToMeasureLatency.pdf) | coordinated omission, in one talk |
+| [Little's law](https://pubsonline.informs.org/doi/10.1287/opre.9.3.383) | why backlog is the signal |
+| [Jepsen consistency models](https://jepsen.io/consistency/models) | choosing the right checker for the contract you claim |
+| [TigerBeetle requests](https://docs.tigerbeetle.com/coding/requests) | the unit, stated by a system that depends on it |
+
+## Still open
+
+- Whether the current driver is open-loop or closed-loop, and which stage timestamps exist today.
+- The measured run-to-run variance of throughput and drain on this topology.
+- Whether any result has been produced under injected failure rather than a clean run.

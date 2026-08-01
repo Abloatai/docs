@@ -5,16 +5,22 @@ again, reacts at machine speed, and can have its actions mechanically reversed. 
 violates all three, and most of the shared-state protocols in
 [shared-state-concurrency.md](shared-state-concurrency.md) depend on at least one of them.
 
-## What the human-agent literature establishes
+## What the literature establishes
 
-- [A Framework for Engineering Human/Agent Teaming Systems](https://ojs.aaai.org/index.php/AAAI/article/view/5629)
-  treats teaming as a systems-engineering problem rather than an interface problem.
-- [Beyond Accuracy: The Role of Mental Models in Human-AI Team Performance](https://aaai.org/papers/00002-5285-beyond-accuracy-the-role-of-mental-models-in-human-ai-team-performance/)
-  shows that individual model accuracy does not predict team performance. What the human
-  believes the system will do is a variable in the outcome.
-- [Complementarity in Human-AI Collaboration](https://arxiv.org/abs/2404.00029) examines when a
-  combined system outperforms either participant alone, which is a narrower condition than it is
-  usually assumed to be.
+| Work | Finding |
+| --- | --- |
+| [Engineering Human/Agent Teaming Systems](https://ojs.aaai.org/index.php/AAAI/article/view/5629) | teaming is a systems-engineering problem, not an interface problem |
+| [Beyond Accuracy](https://aaai.org/papers/00002-5285-beyond-accuracy-the-role-of-mental-models-in-human-ai-team-performance/) | model accuracy does not predict team performance. What the human expects the system to do is a variable in the outcome |
+| [Complementarity in Human-AI Collaboration](https://arxiv.org/abs/2404.00029) | a combined system beats either participant alone under narrower conditions than usually assumed |
+
+## Where agent-only protocols break
+
+| Assumption | Broken by a person |
+| --- | --- |
+| every participant consumes every message before acting | somebody is still typing |
+| actions can be mechanically reversed | the edit was theirs, and reversing it is not a technical decision |
+| the system reaches quiescence | a live workspace may never quiesce |
+| reaction times are uniform | they differ by orders of magnitude |
 
 ## What that requires of the protocol
 
@@ -36,15 +42,9 @@ is the same `queued` and `confirmed` split the write path already carries
 already has the information a good interface needs. Whether it is exposed usefully is a
 different question.
 
-## Questions this raises
+## Still open
 
-- What does a person see today between `queued` and `confirmed`, and how long is that window in
-  practice?
-- When an agent's write conflicts with a human's in-progress edit, who yields, and who is told?
-- Which agent actions are reversible in the current system, and is that classification explicit
-  or implied?
-- What is the escalation path when an effect cannot be undone? Is there one?
-- Can a human hold a claim the way an agent does, and does the lease expiry make sense at human
-  timescales?
-- If the mental-model result holds, what is the single thing a user most needs to predict
-  correctly about Ablo's behaviour, and does the current interface teach it?
+- What a person sees between `queued` and `confirmed`, and how long that window lasts in
+  practice.
+- Who yields when an agent's write meets a human's in-progress edit, and who gets told.
+- What the escalation path is when an effect cannot be undone, and whether one exists.

@@ -58,6 +58,13 @@ publication objects. Each of those was retained against a measured control, and 
 were tried and rejected are listed in
 [04-the-evidence.md](04-the-evidence.md#rejected-and-exhausted-directions).
 
+Each hop in that diagram has a contract you can read:
+[commit](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/commit.ts) in,
+[claims](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/claims.ts) at the guard,
+[pendingWrite](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/transactions/settlement/pendingWrite.ts) for accepted work,
+[delta](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/delta.ts) out, and
+[feedCursor](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/wire/feedCursor.ts) at the observer.
+
 ## WAL robustness
 
 These mechanisms are part of the performance model, not separate from it. Slowing the hot path
@@ -93,17 +100,11 @@ Reading this pack without this table produces an inflated picture of the system.
 | Cross-organisation signed evidence, revocation, dispute handling | direction only |
 | Physical-world actuation and observation semantics | model only, research and product work |
 
-## Questions this raises
+## Still open
 
-- The commit path and publication path diverge after the Postgres commit. What is the longest
-  observed distance between them under load, and what bounds it?
-- Publication grouping happens after projection. What decides a group, and what happens to
-  ordering guarantees when one group falls behind another?
-- The decoder holds a lease. What is the lease duration, what renews it, and what does a
-  fenced-out decoder do with work already in flight?
-- A bounded resnapshot is the recovery path for an invalidated slot. What is the cost of that
-  resnapshot on a large customer table, and what do observers see while it runs?
-- Which parts of this path have never been exercised under a real provider failover rather than
-  an injected one?
-- The client queue is bounded. What happens at the bound: disconnect, spill, or drop? Who
-  learns about it?
+- The longest observed distance between the commit path and the publication path under load,
+  and what bounds it.
+- What an observer sees during a bounded resnapshot, and what that resnapshot costs on a large
+  customer table.
+- Which parts of this path have been exercised under a real provider failover rather than an
+  injected one.

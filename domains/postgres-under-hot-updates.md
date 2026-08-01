@@ -1,67 +1,66 @@
 # Postgres under a high update rate
 
-## The problem
+| | |
+| --- | --- |
+| **Measured cost** | task UPDATE 321 ms p50, 400 ms p95, of 338/416 ms total application SQL ([run 118](../04-the-evidence.md#where-update-cost-actually-goes)) |
+| **Dominant wait** | `LWLock:BufferContent` |
+| **Causal proof** | drop every secondary index: 100,384/sec (run 121), breaks the read contract |
+| **Proposal** | vertical split of identity, mutable state and projections. Untested |
+| **Ceiling it sets** | write amplification on indexed mutable columns |
 
-Ablo's dominant measured cost is the physical UPDATE on an indexed, frequently mutated row.
-Run 118 put application SQL at 338 ms p50 with the task update alone at 321 ms p50, dominated by
-`LWLock:BufferContent`. Dropping every secondary index took the system to 100,384/sec and broke
-the read contract, which is causal proof and not a fix. Numbers in
-[04-the-evidence.md](../04-the-evidence.md#where-update-cost-actually-goes).
+## What decides the cost
 
-## What the field knows
+| Mechanism | Rule | Source |
+| --- | --- | --- |
+| HOT eligibility | an update skips index writes only if no indexed column changed **and** the page has room for the new version | [storage-hot](https://www.postgresql.org/docs/current/storage-hot.html) |
+| HOT benefit | indexes keep pointing at the original item id, which becomes a redirect; intermediate versions are reclaimed during reads instead of vacuum | [storage-hot](https://www.postgresql.org/docs/current/storage-hot.html) |
+| Index cost | indexes speed reads, add DML overhead, and can prevent heap-only tuples | [indexes-intro](https://www.postgresql.org/docs/current/indexes-intro.html) |
+| Summarising indexes | BRIN and other `amsummarizing` methods keep HOT eligible, provided the column is not in an index predicate | [index-api](https://www.postgresql.org/docs/current/index-api.html) |
+| Vacuum debt | dead tuples persist until vacuumed, so a miss is paid twice: index writes now, reclamation later | [routine-vacuuming](https://www.postgresql.org/docs/current/routine-vacuuming.html) |
 
-The mechanism is documented, and it is specific.
+A 20-second measured interval flatters the second payment, because vacuum arrives under
+different load.
 
-**Heap-only tuples are the fast path, and indexes disqualify you from it.** PostgreSQL can avoid
-writing new index entries for an updated row when two conditions hold: the update does not
-modify any column referenced by any of the table's indexes, and the page holding the old row has
-enough free space for the new version. When that happens, indexes keep pointing at the original
-item identifier, which becomes a redirect to the newer version, and obsolete intermediate
-versions can be reclaimed during ordinary reads rather than waiting for vacuum.
+## The proposed split
 
-Miss either condition and every index on the table takes a write for every update, dead tuples
-accumulate, and the reclamation moves to vacuum. PostgreSQL's own introduction to indexes states
-the tradeoff plainly: indexes improve reads, add overhead to data manipulation, and can prevent
-heap-only tuples.
+```text
+task_identity_and_routing    stable identity, ownership, tenant, routing keys. Indexed
+task_mutable_state           hot fields. Minimal or no secondary indexing
+task_query_projection        measured query dimensions only. Freshness policy stated
+```
 
-One nuance worth knowing: summarising access methods such as BRIN are flagged `amsummarizing`
-and do not disqualify HOT for updates to columns they cover, provided those columns are not used
-in index predicates. Index choice, not just index count, changes the write path.
+Trades write amplification in one wide indexed row for joins, projection maintenance, and an
+explicit freshness policy.
 
-**Vacuum is the other half of the bill.** Dead tuples are not physically removed when a row is
-updated or deleted; they persist until vacuumed. A workload that misses HOT therefore pays
-twice, once in index maintenance at write time and once in vacuum debt afterwards, and the
-second payment arrives later, under different load, which is why short benchmark intervals
-flatter it.
+## See it yourself
 
-## The proposal on the table
+The HOT ratio is one query. Run an update workload, add an index on the column being updated,
+run it again, and watch the second number stop tracking the first.
 
-A vertical split that keeps stable indexed identity separate from hot mutable state, with query
-projections maintained explicitly and their freshness stated. The shape is in
-[04-the-evidence.md](../04-the-evidence.md#where-update-cost-actually-goes). It trades write
-amplification in one wide indexed row for joins, projection maintenance and an explicit
-freshness policy. It is untested.
+```sql
+SELECT relname, n_tup_upd, n_tup_hot_upd,
+       round(100.0 * n_tup_hot_upd / nullif(n_tup_upd, 0), 1) AS hot_pct,
+       n_dead_tup
+FROM pg_stat_user_tables ORDER BY n_tup_upd DESC LIMIT 10;
+```
 
-## What to measure here
+`EXPLAIN (ANALYZE, BUFFERS)` on the same update shows the buffer writes the index maintenance
+added, and `pg_stat_statements` shows where the latency went.
 
-Throughput is the least informative metric in this domain. The ones that explain it: SQL
-latency by statement, `BufferContent` wait time, WAL bytes per delta, heap and index bytes
-written, buffer writes, dead tuple count and vacuum debt over time, projection freshness, and
-the read latency of reconstructing one logical entity from multiple physical relations.
+## Go deeper
 
-## Questions this raises
+| Read | For |
+| --- | --- |
+| [Heap-only tuples](https://www.postgresql.org/docs/current/storage-hot.html) | one short page, and the whole cost model is in it |
+| [Routine vacuuming](https://www.postgresql.org/docs/current/routine-vacuuming.html) | why a write-heavy benchmark looks better than the system behaves |
+| [MVCC](https://www.postgresql.org/docs/current/mvcc.html) | tuple versions and snapshots, the layer HOT is an optimisation of |
+| [TigerBeetle on batching](https://docs.tigerbeetle.com/coding/requests) | what a storage engine achieves when it owns the schema and can batch 8,189 events per request |
 
-- What fraction of current updates are HOT-eligible, and what is the exact index that
-  disqualifies the rest?
-- Is `BufferContent` contention on heap pages, index pages, or both? Does the answer change
-  with the number of writer shards?
-- Would a BRIN or covering-index arrangement restore HOT eligibility for part of the workload
-  without losing the read paths that justify the current indexes?
-- After the vertical split, how many physical relations does a common read touch, and what does
-  that do to p99 read latency?
-- What does sustained autovacuum activity do to the throughput number over an hour, rather than
-  over a 20-second interval?
-- Fill factor and HOT tuning were already rejected as a complete answer. Were they rejected as
-  a partial one, and is there a combination with the vertical split that was never tried?
-- Ablo never runs DDL against a customer database. How would a vertical split be offered to a
-  customer whose schema Ablo does not own?
+## Still open
+
+- Whether a vertical split preserves the read paths that justify the current indexes, and what
+  it does to p99 read latency once a logical entity spans three relations.
+- Whether index choice rather than index count is the lever: BRIN or covering indexes could
+  restore HOT eligibility for part of the workload.
+- How a split is offered at all to a customer whose schema Ablo does not own and never runs DDL
+  against.

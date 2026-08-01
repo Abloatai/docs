@@ -1,57 +1,85 @@
-# Capability security and cross-organisation evidence
+# Credentials and authority
 
-## The problem
+Ablo's credential model is the Stripe key and token shape. The sync-server is a **data plane,
+not an auth authority**: it verifies no external end-user tokens, and there is no JWT, no JWKS
+and no trusted-issuer path. Every consumer, including Ablo's own web app, presents a bearer key
+or a backend-minted session token.
 
-Two organisations can disagree about a transition, and neither should have to trust one vendor's
-mutable log to settle it. At the same time, a globally verifiable record must not become a global
-leak of customer data. Those two requirements pull in opposite directions, and the resolution is
-to prove authority and outcome while disclosing as little of the underlying row as possible.
+## The key kinds
 
-The near-term version of the same problem is agent containment. An agent acts with delegated
-authority, retries more than a human, and can be compromised. The question "what is the blast
-radius of this token" is answered by the capability model, not by the application.
+| Kind | Prefix | Held by | Authority |
+| --- | --- | --- | --- |
+| secret | `sk_` | the customer's backend | full org |
+| restricted | `rk_` | agents, and minted agent session tokens | scoped: sync groups, operations, TTL |
+| ephemeral | `ek_` | minted user session tokens, browser | typed operation grant inside the user's org, TTL |
+| publishable | `pk_` | public browser reads | read-only, server-enforced scope |
 
-## What the field knows
+An agent gets an `rk_`, never an `sk_`. A browser that writes gets a minted `ek_`.
 
-**Attenuation without a round trip is a solved primitive.** Macaroons demonstrated bearer
-credentials that any holder can restrict further by appending contextual caveats, with
-verification requiring no call back to the issuer. Biscuit takes the same shape into public-key
-verification with Datalog policies and append-only attenuation blocks, so a holder can narrow
-its authority but never widen it.
+## Minting is a backend call
 
-**Revocation stays stateful, and that is the boundary.** Offline verification and offline
-attenuation do not remove the need for revocation state somewhere, which means the fast path can
-be local while the safety property depends on something global. Every design that gives agents
-long-lived attenuated tokens inherits that tension, and the interesting question is how quickly
-a compromised delegation can be stopped, not whether it can be verified cheaply.
+```ts
+// customer backend, where sk_ lives
+const session = await ablo.sessions.create({
+  user: { id: userId },
+  can: { tasks: ['read', 'update'] },
+  ttlSeconds: 900,
+});
 
-## What Ablo adds around the token
+const agent = await ablo.agents.create({
+  name: 'task-writer',
+  can: { tasks: ['read', 'update'] },
+});
+```
 
-A capability answers whether an actor may act. Ablo layers on the operational half: claim
-ownership so two authorised actors do not both act, fencing so a stale holder is detectably
-stale, idempotency so a retry is not a second action, a transaction outcome so the actor learns
-what happened, and customer-database scoping so authority is bounded by the tenant boundary that
-already exists. Definitions in
-[02-the-contract.md](../02-the-contract.md#vocabulary).
+`can` is typed off the schema's model names and serialised to a concrete wire allowlist, so
+`{ Task: ['update'] }` becomes `task.update`, enforced per commit against
+`${model.toLowerCase()}.${op}`. User sessions mint through `POST /v1/ephemeral_keys`, agent
+sessions through `POST /v1/capabilities`, both authenticated by the `sk_`.
 
-Candidate mechanisms for the cross-organisation layer: signed receipts, capability delegation
-proofs, content-addressed audit evidence, hash-chained or transparency-log settlement records,
-selective disclosure, verifiable organisation and actor attribution, and explicit revocation and
-key-rotation epochs. None of this is built.
+## Two properties worth noticing
 
-## Questions this raises
+**Scope stays live.** A key carries baked base sync groups (`org:`, `user:`, `team:`), and at
+connect the server unions them with relation-driven membership resolved server-side. Scope is
+therefore not frozen at mint time.
 
-- How fast can authority be revoked today, end to end, and what is the worst case for an agent
-  holding a token mid-operation?
-- Is a capability verified once at connection time or on each action? The answer determines the
-  revocation latency, and it is a real tradeoff rather than an oversight.
-- What exactly would a signed receipt commit to: the request, the resulting delta, the database
-  LSN, or all three? Only the third ties the signature to settlement.
-- How would a counterparty verify a receipt without being shown row data they have no right to?
-- What contains a compromised agent besides the token: rate, claim, scope, time? Which of those
-  are enforced today?
-- Device identity over a ten-year hardware lifetime needs key rotation. Does anything in the
-  current model survive rotation?
-- Attribution for a write that bypassed Ablo is weaker by construction. What is the strongest
-  honest statement Ablo can make about such a write, and does the audit trail say it in those
-  words?
+**Revocation is instant without server-side session state.** Session tokens are short-lived, 15
+minutes and auto-refreshed, sitting under a long-lived revocable upstream session that the
+customer's platform owns. Revoke upstream and the next refresh fails. The sync-server holds no
+session state to invalidate.
+
+## The credential is half of it
+
+| Question | Answered by |
+| --- | --- |
+| May this actor act? | the key's scope and operation allowlist |
+| Are two authorised actors both acting? | the claim |
+| Is this holder stale? | the fence |
+| Is this a retry or a second action? | the idempotency key |
+| What happened? | the receipt |
+| Bounded by what? | the org, sync groups, and the scoped DML role in the customer's database |
+
+Definitions in [02-the-contract.md](../02-the-contract.md#vocabulary). A token that validates
+says nothing about whether another actor already owns the row, which is why authority and
+coordination are separate primitives here.
+
+## In the code
+
+| | |
+| --- | --- |
+| Key kinds | [auth/credentialKind.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/credentialKind.ts), [auth/apiKey.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/apiKey.ts) |
+| Minting | [auth/sessionMint.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/sessionMint.ts) |
+| Scope and lifecycle | [auth/capability.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/capability.ts), [auth/capabilityLifecycle.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/capabilityLifecycle.ts) |
+| Identity | [auth/identity.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/identity.ts) |
+| Browser limits | [auth/browserCredentialSafety.ts](https://github.com/Abloatai/ablo/blob/main/packages/transaction/src/auth/browserCredentialSafety.ts) |
+
+The verification path itself runs in the engine, which is not public.
+
+## Still open
+
+- Revocation latency for an agent that is already mid-operation when its authority is pulled.
+  The refresh boundary bounds it, and the bound has not been measured.
+- What a signed receipt should commit to for a counterparty: the request, the resulting delta,
+  or the database LSN. Only the last ties a signature to settlement, and none of it is built.
+- Delegation chains, where an agent spawns a sub-agent. Scope narrows correctly by construction;
+  attribution across the chain is less clear.

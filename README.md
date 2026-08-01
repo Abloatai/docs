@@ -10,7 +10,7 @@
   <a href="01-the-space.md">Start here</a> &nbsp;|&nbsp;
   <a href="02-the-contract.md">The contract</a> &nbsp;|&nbsp;
   <a href="04-the-evidence.md">Evidence</a> &nbsp;|&nbsp;
-  <a href="08-questions.md">Questions</a> &nbsp;|&nbsp;
+  <a href="08-learning-path.md">Learning path</a> &nbsp;|&nbsp;
   <a href="https://github.com/Abloatai/ablo">Ablo on GitHub</a>
 </p>
 
@@ -38,7 +38,7 @@ may safely believe, and how the system recovers after partial failure.
 
 Holding those answers at a high rate has a price in latency, throughput and cost. This pack
 states that price plainly, including the experiments that failed and the parts that remain
-unproven. About a third of it is questions, and most of them are open.
+unproven. Every file ends with what is still open.
 
 ## Start
 
@@ -59,7 +59,7 @@ Then, to go deep:
 
 Alongside any of it:
 
-- [08-questions.md](08-questions.md) the question bank, grouped by who can answer
+- [08-learning-path.md](08-learning-path.md) a six-stage route through the space, with things to run
 - [09-reading-list.md](09-reading-list.md) every external source, with one line on why it matters
 - [10-repo-map.md](10-repo-map.md) where each concept lives in the codebase
 
@@ -75,6 +75,7 @@ of a type is a defect because nothing fails when the copies drift. Prose drifts 
 | An external source and why it matters | [09-reading-list.md](09-reading-list.md) | cites the fact, links the source |
 | A technical field Ablo touches | one file in [domains/](domains/README.md) | links to it |
 | A research paper on agent coordination | one file in [research/](research/README.md) | links to it |
+| An open problem | the **Still open** section of the file that owns it | [08-learning-path.md](08-learning-path.md) indexes them |
 | A file path in the repo | [10-repo-map.md](10-repo-map.md) | links to it |
 
 The same idea explained twice is a bug. This pack replaced a single 1,300-line document that

@@ -166,17 +166,11 @@ reliable recovery, predictable p99 freshness and real operational support matter
 performance work still matters strategically, because it establishes headroom and exposes
 serial assumptions before a customer workload makes them expensive to change.
 
-## Questions this raises
+## Still open
 
-- Run 136 missed the writer gate by 14 deltas/sec. What is the run-to-run variance of that
-  metric, and how many repetitions would it take to call the gate passed honestly?
-- The topology uses 500 operations per commit. What does the same code do at 1 and at 10
-  operations per commit, and which stage becomes dominant there?
-- `LWLock:BufferContent` dominates. Which pages, and is the contention on the heap, the index,
-  or both?
-- The vertical split is a hypothesis. What is the smallest experiment that could falsify it,
-  and what read regression would make it not worth doing?
-- Drain is measured at the end of a 20-second interval. What does drain look like at 10 minutes
-  and at 6 hours, with autovacuum and checkpoints in play?
-- Which of the rejected directions were rejected on this topology only, and could return under
-  a different unit of work?
+- The run-to-run variance of throughput and of final drain on this topology. Run 136 missed the
+  writer gate by 0.014%, and without a variance number that margin cannot be interpreted.
+- What the same code does at 1 and at 10 operations per commit, and which stage dominates there.
+- Whether `LWLock:BufferContent` contention sits on heap pages, index pages, or both.
+- What drain looks like at six hours with autovacuum and checkpoints in play, rather than at 20
+  seconds.

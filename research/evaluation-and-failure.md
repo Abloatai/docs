@@ -1,108 +1,93 @@
 # How these systems fail, and how much of the gain is real
 
-Read this before designing any experiment that claims a coordination layer helped. Two of the
-results here are direct threats to claims Ablo would naturally want to make, which is exactly
-why they belong in the pack.
+Read this before designing any experiment that claims a coordination layer helped. Two of these
+results cut against claims Ablo would naturally want to make, which is why they are here.
 
 ## How much coordination gain is real
 
-[How Much Coordination Gain Is Real? A Paired Noise-Floor Protocol for Multi-Agent LLM
-Benchmarks](https://arxiv.org/abs/2606.20695), Kaliyev and Maryanskyy, June 2026. Preprint.
+[Paired Noise-Floor Protocol](https://arxiv.org/abs/2606.20695), Kaliyev and Maryanskyy, June
+2026, preprint. It asks a prior question: how much do two protocols disagree on the same model
+and benchmark when their inputs are configuration-equivalent, verified by code inspection and a
+byte audit.
 
-The authors ask a prior question: how much paired disagreement do two coordination protocols
-produce on the same model and benchmark when their inputs are configuration-equivalent, verified
-by code inspection and a byte-level audit. On Claude Haiku 4.5 against tau-squared-bench retail,
-two protocols that are inert at trial zero still produce signed paired gaps of +10 and 0
-percentage points across two seeds, pooling to +5 points with a Wilson interval of -2 to +12,
-not significant. The largest single-seed contrast, +18 points, failed to reproduce at the second
-seed, coming back at -3. The observed envelope spans -3 to +18 points.
+| On Claude Haiku 4.5, tau-squared-bench retail | Result |
+| --- | --- |
+| Two protocols, both inert at trial 0, two seeds | +10pp and 0pp |
+| Pooled | +5pp, Wilson CI [-2, +12], not significant |
+| Largest single-seed contrast | +18pp (p 0.012), reproduced at seed 2 as **-3pp** |
+| Observed envelope across seeds | -3pp to +18pp |
+| Recent architectures reporting effects **below** this floor | **7 of 10**, with one more inside the envelope |
 
-The conclusion is the uncomfortable part. Seven of ten recent multi-agent coordination
-architectures report headline effects below that local noise floor, and one more sits inside the
-envelope. Whether any of them survives a same-model paired replication is untested in their
-original settings.
-
-This is one model on one benchmark, and the floor elsewhere may differ. It still sets a
-standard. Any Ablo coordination result that reports a margin in single-digit percentage points,
-without paired replication across seeds, is reporting noise until proven otherwise. The house
-rule against re-rolling a benchmark for a lucky pass
-([07-measuring-it.md](../07-measuring-it.md#mechanism-backed-evidence)) is the same discipline
-applied to throughput, and it should transfer to coordination benchmarks without argument.
+One model, one benchmark, and the floor elsewhere may differ. It still sets a standard: a
+coordination result with a single-digit margin and no paired replication across seeds is
+reporting noise until proven otherwise. Same discipline as the rule against re-rolling a
+throughput benchmark ([07-measuring-it.md](../07-measuring-it.md#mechanism-backed-evidence)).
 
 ## Protocol structure dominates model capability
 
-[DPBench: Structural Determinants of Multi-Agent LLM Coordination Under Simultaneous Resource
-Contention](https://arxiv.org/abs/2602.13255), Hasan and BusiReddyGari, February 2026, revised
-June 2026. Preprint.
+[DPBench](https://arxiv.org/abs/2602.13255), Hasan and BusiReddyGari, February 2026, revised
+June, preprint. Dining philosophers adapted so agents contend for the same resources
+simultaneously, varying communication protocol, network structure and group size independently
+across six models including GPT-5.2, Claude Opus 4.5 and Gemini 2.5 Flash.
 
-DPBench adapts the dining philosophers problem so that agents contend for the same resources
-simultaneously, then varies communication protocol, network structure and group size
-independently. Across six models including GPT-5.2, Claude Opus 4.5 and Gemini 2.5 Flash, the
-finding is that protocol design dominates model capability: three rounds of pre-commitment
-communication produced a 0.0 percent deadlock rate where a single round produced 86.7 percent,
-and minimal prompts approached total failure, while concurrency primitives drove deadlock to
-near zero.
+| Condition | Deadlock rate |
+| --- | ---: |
+| Single round of pre-commitment communication | 86.7% |
+| Three rounds of pre-commitment | 0.0% |
+| Minimal prompts | approaching 100% |
+| With concurrency primitives | near zero |
 
-If that result holds, it is the strongest available argument for the existence of a coordination
-layer as a product. It says the failure mode is structural rather than cognitive, so a better
-model does not fix it and a protocol does. It is also a warning about attribution: a benchmark
-that changes the protocol and the model at once cannot tell you which one moved the number.
+If it holds, this is the strongest available argument that a coordination layer is a product:
+the failure is structural, so a better model does not fix it and a protocol does. It is equally
+a warning about attribution, since a benchmark that changes protocol and model together cannot
+say which moved the number.
 
-## Why multi-agent systems fail
+## Why they fail
 
-[Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657) introduces the MAST
-taxonomy from more than 1,600 annotated traces across seven frameworks, sorting 14 failure modes
-into system design, inter-agent misalignment, and verification.
+| Source | Evidence |
+| --- | --- |
+| [MAST](https://arxiv.org/abs/2503.13657) | 14 failure modes from 1,600+ annotated traces across seven frameworks, in three groups: system design, inter-agent misalignment, verification |
+| [SILO-BENCH](https://arxiv.org/abs/2603.01045) | thirty algorithmic tasks over distributed information. Agents often exchange enough information and still fail to integrate it, and coordination overhead eventually erases the parallel gain |
 
-It is the necessary counterweight to every architecture paper, including this one. Reliable
-transport does not compensate for ambiguous roles, bad delegation, missing verification, or
-agents that receive relevant information and fail to use it. A perfect coordination substrate
-can still host a system that fails on every task.
-
-[SILO-BENCH](https://arxiv.org/abs/2603.01045) (Zhang et al., 2026, accepted at ACL 2026) makes
-the same point quantitatively with thirty algorithmic tasks over distributed information,
-reporting a communication and reasoning gap: agents often exchange enough information and still
-fail to integrate it, and coordination overhead eventually erases the parallel gain.
+The counterweight to every architecture paper, including this one: reliable transport does not
+compensate for ambiguous roles, bad delegation, missing verification, or agents that receive
+what they need and fail to use it.
 
 ## Evaluate the layers separately
 
-Which produces the practical requirement. An evaluation of an Ablo-backed system has to measure
-these independently, or it will credit the substrate for a model's reasoning, or blame a correct
-substrate for an agent's failure to use what it was given.
+| Layer | Question | Who owns it |
+| --- | --- | --- |
+| 1. Transport and settlement | was every authorised transition committed, ordered, published, acknowledged, recoverable? | the substrate |
+| 2. View coherence | did each actor get the state and invalidations it needed before acting? | the substrate |
+| 3. Coordination behaviour | did actors assign work, honour dependencies, respond to conflicts? | shared |
+| 4. Task outcome | was the final world state correct under domain invariants? | the application |
+| 5. Efficiency | wall time, tokens, bytes, retries, compensations, conflicts, human interventions | shared |
 
-1. **Transport and settlement**: was every authorised transition committed, ordered, published,
-   acknowledged and recoverable?
-2. **View coherence**: did each actor receive or retrieve the state and invalidations it needed
-   before acting?
-3. **Coordination behaviour**: did actors assign work, honour dependencies and respond to
-   conflicts correctly?
-4. **Task outcome**: was the final world state correct under domain invariants?
-5. **Efficiency**: what wall time, tokens, bytes, retries, compensations, conflicts and human
-   interventions were consumed?
+Without the separation, an experiment credits the substrate for a model's reasoning, or blames a
+correct substrate for an agent's failure to use what it was given.
+[Coordination as an Architectural Layer](https://arxiv.org/abs/2605.03310) argues the same from
+the other direction: hold model, tools, prompts and information access fixed, vary only the
+coordination configuration. The [Always-On Agents](https://arxiv.org/abs/2606.30306) survey
+proposes AOEP-v0, a pilot contract scoring state mutation and recovery obligations rather than
+answer quality, which is layers 1 and 2 made scoreable.
 
-[Coordination as an Architectural Layer](https://arxiv.org/abs/2605.03310) (Nechepurenko and
-Shuvalov, 2026, preprint) argues the same separation from the other direction: hold model,
-tools, prompts and information access fixed, and vary only the coordination configuration.
-That is the experimental design the layer-separation above implies.
+## Go deeper
 
-The [Always-On Agents](https://arxiv.org/abs/2606.30306) survey proposes a pilot evaluation
-contract, AOEP-v0, that scores state mutation and recovery obligations rather than answer
-quality. Layers 1 and 2 above are exactly what it tries to make scoreable, and it is worth
-reading before building an evaluation harness from scratch.
+| Read | For |
+| --- | --- |
+| [Paired noise floor](https://arxiv.org/abs/2606.20695) | the standard any coordination benchmark now has to clear |
+| [DPBench](https://arxiv.org/abs/2602.13255) | structure against capability, measured |
+| [MAST](https://arxiv.org/abs/2503.13657) | the failure taxonomy, from real traces |
+| [Always-On Agents](https://arxiv.org/abs/2606.30306) | an evaluation contract for state, not answers |
 
-## Questions this raises
+## Still open
 
-- What is the noise floor of Ablo's own coordination benchmark, measured with paired
-  configuration-equivalent runs on one model? Until that number exists, no coordination result
-  from it can be interpreted.
-- Which of the 14 MAST failure modes can Ablo's substrate prevent, and which are the
-  application's problem? Being honest about the second list is what makes the first list
-  credible.
-- DPBench suggests structure beats model capability. Does that hold on a task where the shared
-  state is a real database rather than a synthetic resource?
-- Layer 1 (transport and settlement) is the only layer Ablo fully controls. Is it measured
-  separately today, or only through end-to-end task success?
-- What is the coordination overhead per agent, in tokens and in wall time, and at what agent
-  count does it erase the parallel gain?
-- If a customer's agents fail on a task, what does Ablo let them see that tells them which layer
-  failed? That diagnostic may be worth more commercially than the coordination itself.
+- The noise floor of any Ablo coordination benchmark, measured with paired
+  configuration-equivalent runs on one model. Without it, no result from that benchmark can be
+  interpreted.
+- Which MAST failure modes a substrate can prevent, against those that stay the application's.
+  Being honest about the second list is what makes the first credible.
+- Whether DPBench's result holds when the shared state is a real database rather than a
+  synthetic resource.
+- Coordination overhead per agent, in tokens and wall time, and the agent count at which it
+  erases the parallel gain.
