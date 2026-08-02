@@ -128,6 +128,7 @@ database or trusting the other's system of record. Nobody re-keys anything from 
 writing the same rows all day, where the failure mode today is silent overwriting and the fix
 today is telling everyone to be careful.
 
-Today the first of those is the one that is demonstrable. The cross-organisation case is a
+Today the first of those is the one that is demonstrable, and
+[11-what-is-proven.md](11-what-is-proven.md) says exactly which parts of it execute. The cross-organisation case is a
 protocol direction with nothing built, and the physical case is modelled rather than shipped
 ([what is shipped](03-the-system-today.md#what-is-shipped-what-is-not)).

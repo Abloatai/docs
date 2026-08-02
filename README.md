@@ -96,6 +96,7 @@ Then, to go deep:
 Alongside any of it:
 
 - [08-learning-path.md](08-learning-path.md) a six-stage route through the space, with things to run
+- [11-what-is-proven.md](11-what-is-proven.md) each guarantee mapped to the journey that executes it, and the ones with nothing behind them
 - [09-reading-list.md](09-reading-list.md) every external source, with one line on why it matters
 - [10-repo-map.md](10-repo-map.md) where each concept lives in the codebase
 
@@ -108,6 +109,7 @@ of a type is a defect because nothing fails when the copies drift. Prose drifts 
 | --- | --- | --- |
 | A defined term | [02-the-contract.md](02-the-contract.md) | links to it |
 | A measured number | [04-the-evidence.md](04-the-evidence.md) | links to it |
+| Whether a guarantee is executed | [11-what-is-proven.md](11-what-is-proven.md) | links to it |
 | An external source and why it matters | [09-reading-list.md](09-reading-list.md) | cites the fact, links the source |
 | A technical field Ablo touches | one file in [domains/](domains/README.md) | links to it |
 | A research paper on agent coordination | one file in [research/](research/README.md) | links to it |

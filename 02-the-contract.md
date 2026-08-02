@@ -88,6 +88,9 @@ Any optimisation intended for production preserves all of these:
 - no receipt semantics weakened to improve a graph
 - no unmeasured handoff of work from the server to an overloaded client
 
+Which of these actually execute against a real server, and which are still only asserted, is
+[11-what-is-proven.md](11-what-is-proven.md).
+
 This list is why several attractive-looking optimisations are not valid shortcuts. The rejected
 experiments in [04-the-evidence.md](04-the-evidence.md#rejected-and-exhausted-directions) are
 mostly cases where the throughput was real and one of these invariants was the price.

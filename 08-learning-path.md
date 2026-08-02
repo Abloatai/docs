@@ -81,6 +81,9 @@ needs current state, and why one log can serve both.
 [representation-and-memory](domains/representation-and-memory.md#see-it-yourself). Halve the
 payload, halve the time. That is the entire mechanism behind the last retained result.
 
+**Also read:** [11-what-is-proven.md](11-what-is-proven.md), which maps each guarantee to the
+journey that executes it, including the Hermitage ports and the fail-first control.
+
 **Explain after:** why runs 124 to 128 were rejected despite matching throughput
 ([04](04-the-evidence.md#the-rejected-experiment-that-taught-the-most)).
 
