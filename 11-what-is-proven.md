@@ -18,12 +18,13 @@ test was supposed to emit, and hid the bug it was written to catch.
 | No missing, duplicate or reordered replay | `post-commit-receipt`, `commit-dispatcher` | durable acknowledgement and replay recovery, dispatch in commit order against a real control-plane WAL |
 | Deterministic conflict semantics | `hermitage-conformance`, `coordination-laws`, `functional-update-concurrent`, `connect-locate-conflict` | see the two sections below |
 | Idempotent retry | `idempotent-create`, `post-commit-receipt` | the same create twice leaves one row, and a lost connection does not double-apply |
-| Capability and tenant isolation | `org-isolation`, `syncgroups`, `auth-identity`, `dashboard`, `direct-write-rls-session-settings`, `postgres-replication-rls-snapshot` | members share, another organisation is blind, and the customer's own RLS governs the mediated write |
+| Capability and tenant isolation | `org-isolation`, `scope-pinned-server-side`, `auth-identity`, `control-plane-authz`, `direct-write-rls-session-settings`, `postgres-replication-rls-snapshot` | members share, another organisation is blind, and the customer's own RLS governs the mediated write |
 | Claim and fencing correctness | `claims`, `claims-autosubscribe`, `claim-rowfree-rung0` | contention across two real clients, a peer observing a claim, and a claim on a key Ablo never synced |
 | Audit ordering and recoverability | `audit-outbox`, `evidence-watermark` | atomic enqueue, ordered sealing, replay, and the state a write reasoned from |
 | Safe recovery after restart | `crash-recovery`, `log-store-checkpoint` | Postgres dies mid-session and the stack recovers consistently; a materialised checkpoint reads identically to the log |
 | Bounded retained WAL | `postgres-replication-slot-pressure`, `postgres-replication-slot-loss` | a stalled consumer walks the slot to invalidation, and the gap is re-snapshotted rather than skipped |
 | Receipt semantics preserved | `confirmed`, `post-commit-receipt`, `endpoint-events-settlement` | `wait: 'confirmed'` resolves on the authoritative echo, with a peer attached and with the peer offline |
+| The published contract is sufficient | `contract-is-sufficient` | a Python client built from the published document alone, importing none of our types, drives the two-agent journey against the real server |
 | Settlement into the customer's database | `connect-direct`, `connect-drizzle-events`, `connect-kysely-events`, `connect-prisma-events`, `postgres-replication-live` | the write lands in their Postgres and returns through logical replication |
 
 ## Tested against somebody else's battery
@@ -108,6 +109,21 @@ Stated plainly, because the rest of this file is only worth reading if this sect
 A journey is named for the claim it proves, not the subsystem it touches, and each one pins an
 incident or a law rather than a feature. `confirmed` is a claim about receipts. `org-isolation`
 is a claim about tenancy. `fold-oracle.property` is a claim that two read paths cannot disagree.
+
+Four were named after the surface they exercised and have been realigned, because a name that
+says where the code lives tells a reader nothing about what breaks if it fails:
+
+| Was | Is | The claim |
+| --- | --- | --- |
+| `syncgroups` | `scope-pinned-server-side` | a narrow key sees only its groups, and no write crosses the organisation wall |
+| `dashboard` | `control-plane-authz` | control-plane authority comes from the member table, not from holding a key |
+| `python-client` | `contract-is-sufficient` | the published contract is enough to build a working client from |
+| `json-field-corruption` | `json-roundtrip-by-column-type` | a json value survives by physical column type, and TEXT coerces it |
+
+`connect-ladder` keeps its name. It reads like jargon and is not: the ladder is the internal
+vocabulary for how far a customer's database is connected, anchored in two decision records, and
+its test title already leads with the claim that the customer keeps their database while Ablo
+coordinates, confirms and hosts nothing.
 
 The suite exists because one day of walking real journeys found roughly ten production bugs that
 750 passing unit tests could not see, every one of them an interaction between layers. Unit
