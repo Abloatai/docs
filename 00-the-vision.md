@@ -109,8 +109,8 @@ None of it is built.
 | Structure beats model capability, measured | deadlock 86.7% at one round of pre-commitment, 0.0% at three, dominating the choice of model ([DPBench](https://arxiv.org/abs/2602.13255)) |
 | Physical actors are already deployed in millions | [IFR World Robotics](https://ifr.org/ifr-press-releases/news/record-of-4-million-robots-working-in-factories-worldwide) |
 
-The last one is the argument in miniature. A better model does not fix a coordination failure,
-because the failure is structural. A protocol does.
+The DPBench row is the argument in miniature. A better model does not fix a coordination
+failure, because the failure is structural. A protocol does.
 
 ## What it looks like if it works
 
@@ -128,19 +128,6 @@ database or trusting the other's system of record. Nobody re-keys anything from 
 writing the same rows all day, where the failure mode today is silent overwriting and the fix
 today is telling everyone to be careful.
 
-## What would make this wrong
-
-Held to the same standard as everything else here.
-
-| If this turns out to be true | The thesis weakens |
-| --- | --- |
-| Agents stay siloed inside one vendor's stack, and cross-stack coordination never matters | the neutral position has no value |
-| Companies never let an outside layer mediate their writes | the model becomes a library, not infrastructure |
-| Branch-and-merge is enough, because agent work forks cleanly | mediated writes are overhead ([CAID](https://arxiv.org/abs/2603.21489) against [STORM](https://arxiv.org/abs/2605.20563)) |
-| Measured coordination gains do not clear the noise floor | the layer is a story, not a result ([noise floor](research/evaluation-and-failure.md#how-much-coordination-gain-is-real)) |
-| One model vendor becomes trusted enough to be the neutral party | neutrality stops being scarce |
-
-The honest position: the single-company case is demonstrable now, the cross-organisation case is
-a protocol direction with nothing built, and the physical case is modelled rather than shipped
-([what is shipped](03-the-system-today.md#what-is-shipped-what-is-not)). The vision is the
-reason for the engineering, not evidence for it.
+Today the first of those is the one that is demonstrable. The cross-organisation case is a
+protocol direction with nothing built, and the physical case is modelled rather than shipped
+([what is shipped](03-the-system-today.md#what-is-shipped-what-is-not)).

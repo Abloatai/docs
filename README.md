@@ -44,7 +44,7 @@ physical ones, come to make most consequential changes, that they will need to a
 things at the same time, and that the record of who was allowed to act and what settled becomes
 infrastructure. One million agents each acting once every ten seconds is 100,000 changes per
 second, which is exactly the gate the engine is measured against today.
-[00-the-vision.md](00-the-vision.md) makes that case, and lists what would make it wrong.
+[00-the-vision.md](00-the-vision.md) makes that case.
 
 Holding those answers at a high rate has a price in latency, throughput and cost. This pack
 states that price plainly, including the experiments that failed and the parts that remain
@@ -79,7 +79,7 @@ doing the work, and where Palantir reached the same conclusion from the enterpri
 
 An hour, to get oriented:
 
-1. [00-the-vision.md](00-the-vision.md) why any of this is worth building, and what would make it wrong
+1. [00-the-vision.md](00-the-vision.md) why any of this is worth building
 2. [01-the-space.md](01-the-space.md) what Ablo is claiming, and who else is in the space
 3. [02-the-contract.md](02-the-contract.md) the vocabulary and the non-negotiable guarantees
 4. [03-the-system-today.md](03-the-system-today.md) the path a write actually takes

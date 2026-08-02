@@ -1,7 +1,7 @@
 # 01. The space Ablo is trying to take
 
-The longer bet, and what would falsify it, is [00-the-vision.md](00-the-vision.md). This file is
-the near-term version: what Ablo claims today, and who else already occupies part of it.
+The longer bet is [00-the-vision.md](00-the-vision.md). This file is the near-term version:
+what Ablo claims today, and who else already occupies part of it.
 
 ## The shift that creates the problem
 
