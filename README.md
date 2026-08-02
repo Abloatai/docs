@@ -7,7 +7,8 @@
 </p>
 
 <p align="center">
-  <a href="01-the-space.md">Start here</a> &nbsp;|&nbsp;
+  <a href="00-the-vision.md">The vision</a> &nbsp;|&nbsp;
+  <a href="01-the-space.md">The space</a> &nbsp;|&nbsp;
   <a href="02-the-contract.md">The contract</a> &nbsp;|&nbsp;
   <a href="04-the-evidence.md">Evidence</a> &nbsp;|&nbsp;
   <a href="domains/ontology-and-schema.md">Ontology</a> &nbsp;|&nbsp;
@@ -37,6 +38,13 @@ Software used to have one writer. AI applications now have humans, agents, workf
 services acting concurrently, and coordinating them means answering questions a database
 transaction leaves open: who was allowed to act, which transition committed, what each observer
 may safely believe, and how the system recovers after partial failure.
+
+The bet behind the engineering is that this keeps going: that software actors, and eventually
+physical ones, come to make most consequential changes, that they will need to act on the same
+things at the same time, and that the record of who was allowed to act and what settled becomes
+infrastructure. One million agents each acting once every ten seconds is 100,000 changes per
+second, which is exactly the gate the engine is measured against today.
+[00-the-vision.md](00-the-vision.md) makes that case, and lists what would make it wrong.
 
 Holding those answers at a high rate has a price in latency, throughput and cost. This pack
 states that price plainly, including the experiments that failed and the parts that remain
@@ -71,18 +79,19 @@ doing the work, and where Palantir reached the same conclusion from the enterpri
 
 An hour, to get oriented:
 
-1. [01-the-space.md](01-the-space.md) what Ablo is claiming, and who else is in the space
-2. [02-the-contract.md](02-the-contract.md) the vocabulary and the non-negotiable guarantees
-3. [03-the-system-today.md](03-the-system-today.md) the path a write actually takes
-4. [04-the-evidence.md](04-the-evidence.md) what has been measured, including what failed
+1. [00-the-vision.md](00-the-vision.md) why any of this is worth building, and what would make it wrong
+2. [01-the-space.md](01-the-space.md) what Ablo is claiming, and who else is in the space
+3. [02-the-contract.md](02-the-contract.md) the vocabulary and the non-negotiable guarantees
+4. [03-the-system-today.md](03-the-system-today.md) the path a write actually takes
+5. [04-the-evidence.md](04-the-evidence.md) what has been measured, including what failed
 
 Then, to go deep:
 
-5. [05-why-it-is-hard.md](05-why-it-is-hard.md) the systems difficulty, stated precisely
-6. [06-scale-regimes.md](06-scale-regimes.md) why one million per second is three different targets
-7. [domains/](domains/README.md) the nine technical fields, one file each
-8. [research/](research/README.md) the agent-coordination literature, through July 2026
-9. [07-measuring-it.md](07-measuring-it.md) how to read a performance claim, including ours
+6. [05-why-it-is-hard.md](05-why-it-is-hard.md) the systems difficulty, stated precisely
+7. [06-scale-regimes.md](06-scale-regimes.md) why one million per second is three different targets
+8. [domains/](domains/README.md) the nine technical fields, one file each
+9. [research/](research/README.md) the agent-coordination literature, through July 2026
+10. [07-measuring-it.md](07-measuring-it.md) how to read a performance claim, including ours
 
 Alongside any of it:
 

@@ -1,5 +1,8 @@
 # 01. The space Ablo is trying to take
 
+The longer bet, and what would falsify it, is [00-the-vision.md](00-the-vision.md). This file is
+the near-term version: what Ablo claims today, and who else already occupies part of it.
+
 ## The shift that creates the problem
 
 Software is moving from passive tools operated by humans toward active software actors. One
