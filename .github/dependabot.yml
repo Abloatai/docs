@@ -1,0 +1,22 @@
+# Dependabot: monthly updates for the Nix flake inputs (flake.lock), the only
+# dependency manifest in this repo.
+#
+# - Dependabot proposes newer upstream commits for each flake input. All
+#   inputs land in one PR. Nix has version updates only; Dependabot raises no
+#   security updates for it.
+# - `cooldown` waits a week after an upstream commit before proposing it.
+#
+# Reference:
+# https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference
+version: 2
+updates:
+  - package-ecosystem: nix
+    directory: /
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      nix-flake-inputs:
+        applies-to: version-updates
+        patterns: ["*"]
